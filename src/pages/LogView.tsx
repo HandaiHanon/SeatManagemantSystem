@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useLogs } from "../hooks/useLogs";
 import { useSeats } from "../hooks/useSeats";
+import { clearLogs } from "../lib/seatService";
 
 const STATUS_LABEL: Record<string, string> = {
   available: "空席",
@@ -12,6 +13,8 @@ const STATUS_LABEL: Record<string, string> = {
 export function LogView() {
   const { logs, loading: logsLoading } = useLogs();
   const { seats, loading: seatsLoading } = useSeats();
+  const [clearing, setClearing] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   // 統計サマリー
   const stats = useMemo(() => {
@@ -114,19 +117,46 @@ export function LogView() {
         </div>
       )}
 
-      {/* エクスポート */}
+      {/* 操作ボタン */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-gray-700">
           操作履歴（{logs.length}件）
         </h3>
-        <button
-          onClick={handleExport}
-          disabled={logs.length === 0}
-          className="px-4 py-1.5 text-sm rounded bg-gray-700 text-white hover:bg-gray-800 disabled:bg-gray-300 transition-colors"
-        >
-          CSVエクスポート
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={async () => {
+              if (!confirm("操作ログを全件削除しますか？\n（先にCSVエクスポートすることをおすすめします）")) return;
+              setClearing(true);
+              try {
+                const count = await clearLogs();
+                setMessage(`${count}件のログを削除しました`);
+              } catch (err) {
+                console.error(err);
+                setMessage("削除に失敗しました");
+              } finally {
+                setClearing(false);
+              }
+            }}
+            disabled={logs.length === 0 || clearing}
+            className="px-3 py-1.5 text-sm rounded bg-red-500 text-white hover:bg-red-600 disabled:bg-gray-300 transition-colors"
+          >
+            {clearing ? "削除中..." : "ログリセット"}
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={logs.length === 0}
+            className="px-3 py-1.5 text-sm rounded bg-gray-700 text-white hover:bg-gray-800 disabled:bg-gray-300 transition-colors"
+          >
+            CSV出力
+          </button>
+        </div>
       </div>
+
+      {message && (
+        <div className="mb-3 p-2 rounded-lg bg-gray-100 text-center text-sm font-medium">
+          {message}
+        </div>
+      )}
 
       {/* ログテーブル */}
       {logs.length === 0 ? (

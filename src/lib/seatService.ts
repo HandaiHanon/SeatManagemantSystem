@@ -172,6 +172,24 @@ export async function resetAllSeats(seats: Seat[]): Promise<number> {
   return toReset.length;
 }
 
+/**
+ * 操作ログを全件削除する
+ */
+export async function clearLogs(): Promise<number> {
+  const snapshot = await getDocs(collection(db, "operation_logs"));
+  if (snapshot.empty) return 0;
+
+  const total = snapshot.size;
+  for (let i = 0; i < snapshot.docs.length; i += 400) {
+    const chunk = snapshot.docs.slice(i, i + 400);
+    const batch = writeBatch(db);
+    chunk.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
+
+  return total;
+}
+
 export interface SeatConfig {
   id: string;
   row: string;
