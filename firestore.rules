@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // seats コレクション
+    match /seats/{seatId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['row', 'col', 'block', 'type', 'status', 'updatedAt'])
+                    && request.resource.data.status in ['available', 'waiting', 'guiding', 'seated']
+                    && request.resource.data.type in ['normal', 'equipment']
+                    && request.resource.data.block in ['front', 'center', 'back'];
+      allow update: if request.resource.data.status in ['available', 'waiting', 'guiding', 'seated'];
+      allow delete: if true;
+    }
+
+    // operation_logs コレクション（追記のみ、削除不可）
+    match /operation_logs/{logId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['seatId', 'previousStatus', 'newStatus', 'timestamp'])
+                    && request.resource.data.previousStatus in ['available', 'waiting', 'guiding', 'seated']
+                    && request.resource.data.newStatus in ['available', 'waiting', 'guiding', 'seated'];
+      allow update, delete: if false;
+    }
+  }
+}
