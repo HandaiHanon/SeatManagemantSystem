@@ -111,9 +111,9 @@ export function SetupView() {
   }
 
   return (
-    <div className="p-4 max-w-3xl mx-auto">
+    <div className="p-3 sm:p-4 max-w-3xl mx-auto">
       {/* レイアウト設定 */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
         <label className="block">
           <span className="text-sm font-medium text-gray-700">行数 (A~)</span>
           <input
@@ -139,7 +139,7 @@ export function SetupView() {
       </div>
 
       {/* ブロック境界設定 */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
         <label className="block">
           <span className="text-sm font-medium text-gray-700">
             前方ブロック (<span className="text-blue-600">front</span>): 1行目 ~ {frontEnd}行目
@@ -181,12 +181,12 @@ export function SetupView() {
       </p>
 
       {/* プレビューグリッド */}
-      <div className="overflow-x-auto mb-4">
+      <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 mb-4">
         <div className="inline-block">
           {/* 列番号 */}
-          <div className="flex gap-0.5 ml-10 mb-0.5">
+          <div className="flex gap-0.5 ml-8 sm:ml-10 mb-0.5">
             {Array.from({ length: colCount }, (_, i) => (
-              <div key={i} className="w-10 text-center text-xs text-gray-500">
+              <div key={i} className="w-8 sm:w-10 text-center text-[10px] sm:text-xs text-gray-500">
                 {i + 1}
               </div>
             ))}
@@ -195,9 +195,9 @@ export function SetupView() {
           {rows.map((row, rowIndex) => (
             <div key={row} className="flex gap-0.5 items-center mb-0.5">
               {/* 行ラベル + ブロック表示 */}
-              <div className="w-10 flex items-center gap-1">
-                <span className="text-sm font-bold text-gray-600">{row}</span>
-                <span className={`text-[10px] px-1 rounded ${
+              <div className="w-8 sm:w-10 flex items-center gap-0.5 sm:gap-1">
+                <span className="text-xs sm:text-sm font-bold text-gray-600">{row}</span>
+                <span className={`text-[8px] sm:text-[10px] px-0.5 sm:px-1 rounded ${
                   getBlock(rowIndex) === "front" ? "text-blue-600 bg-blue-100" :
                   getBlock(rowIndex) === "back" ? "text-red-600 bg-red-100" :
                   "text-gray-500 bg-gray-100"
@@ -213,10 +213,10 @@ export function SetupView() {
                   <button
                     key={id}
                     onClick={() => toggleEquipment(id)}
-                    className={`w-10 h-8 rounded text-[10px] font-medium select-none transition-colors border ${
+                    className={`w-8 h-8 sm:w-10 sm:h-8 rounded text-[8px] sm:text-[10px] font-medium select-none transition-colors border ${
                       isEquip
                         ? "bg-slate-800 text-slate-300 border-slate-700"
-                        : `${blockColor(rowIndex)} text-gray-600 hover:bg-green-100`
+                        : `${blockColor(rowIndex)} text-gray-600 hover:bg-green-100 active:bg-green-200`
                     }`}
                   >
                     {id}
@@ -229,12 +229,12 @@ export function SetupView() {
       </div>
 
       {/* ステータス */}
-      <div className="flex items-center justify-between mb-4 text-sm text-gray-600">
-        <span>
-          通常席: <strong>{seatConfigs.filter((s) => s.type === "normal").length}</strong> /
-          機材席: <strong>{seatConfigs.filter((s) => s.type === "equipment").length}</strong> /
-          合計: <strong>{seatConfigs.length}</strong>
-        </span>
+      <div className="flex flex-wrap gap-1 mb-4 text-xs sm:text-sm text-gray-600">
+        <span>通常: <strong>{seatConfigs.filter((s) => s.type === "normal").length}</strong></span>
+        <span>/</span>
+        <span>機材: <strong>{seatConfigs.filter((s) => s.type === "equipment").length}</strong></span>
+        <span>/</span>
+        <span>合計: <strong>{seatConfigs.length}</strong></span>
       </div>
 
       {/* ボタン群 */}

@@ -46,23 +46,23 @@ export function GuideView() {
   const textMuted = dark ? "text-gray-400" : "text-gray-400";
 
   return (
-    <div className={`p-4 ${bg} ${textMain}`}>
+    <div className={`p-3 sm:p-4 ${bg} ${textMain}`}>
       {/* ダークモードトグル + ステータス */}
-      <div className="flex items-center justify-between mb-4">
-        <div className={`flex gap-4 text-sm ${dark ? "text-gray-300" : ""}`}>
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className={`flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm ${dark ? "text-gray-300" : ""}`}>
           <span>
-            待機中: <strong className={dark ? "text-yellow-400" : "text-yellow-600"}>{waitingCount}</strong>
+            待機: <strong className={dark ? "text-yellow-400" : "text-yellow-600"}>{waitingCount}</strong>
           </span>
           <span>
-            案内中: <strong className={dark ? "text-orange-400" : "text-orange-600"}>{guidingCount}</strong>
+            案内: <strong className={dark ? "text-orange-400" : "text-orange-600"}>{guidingCount}</strong>
           </span>
           <span>
-            着席済: <strong className={dark ? "text-gray-400" : "text-gray-600"}>{seatedCount}</strong>
+            着席: <strong className={dark ? "text-gray-400" : "text-gray-600"}>{seatedCount}</strong>
           </span>
         </div>
         <button
           onClick={() => setDark((d) => !d)}
-          className={`px-3 py-1 text-sm rounded transition-colors ${
+          className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors shrink-0 ${
             dark
               ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
               : "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -100,7 +100,7 @@ export function GuideView() {
         </div>
       )}
 
-      <div className="flex justify-center">
+      <div className="flex justify-center overflow-x-auto">
         <SeatGrid seats={seats} onSeatTap={handleSeatTap} dark={dark} />
       </div>
 

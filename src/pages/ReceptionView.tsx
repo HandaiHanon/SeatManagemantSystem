@@ -40,7 +40,6 @@ export function ReceptionView() {
     });
   }, [seats]);
 
-  // 人数選択 → おすすめ席を算出して確認フェーズへ
   const handleSelectCount = (n: number) => {
     setCount(n);
     setMessage(null);
@@ -63,7 +62,6 @@ export function ReceptionView() {
     handleSelectCount(n);
   };
 
-  // 座席タップで選択/解除
   const toggleSeat = (seat: Seat) => {
     if (seat.type === "equipment" || seat.status !== "available") return;
     setSelectedIds((prev) => {
@@ -74,7 +72,6 @@ export function ReceptionView() {
     });
   };
 
-  // 確定
   const handleConfirm = async () => {
     if (selectedIds.size === 0) return;
     setSubmitting(true);
@@ -93,7 +90,6 @@ export function ReceptionView() {
     }
   };
 
-  // 戻る
   const handleBack = () => {
     setPhase("select-count");
     setSelectedIds(new Set());
@@ -126,25 +122,25 @@ export function ReceptionView() {
     }
 
     return (
-      <div className="p-4 max-w-3xl mx-auto">
+      <div className="p-3 sm:p-4 max-w-3xl mx-auto">
         {/* ヘッダー */}
         <div className="flex items-center justify-between mb-3">
           <button
             onClick={handleBack}
-            className="px-3 py-1 text-sm rounded bg-gray-200 hover:bg-gray-300 transition-colors"
+            className="px-3 py-2 text-sm rounded bg-gray-200 hover:bg-gray-300 active:bg-gray-400 transition-colors"
           >
             戻る
           </button>
-          <span className="text-sm text-gray-600">
-            <strong className="text-lg">{selectedIds.size}</strong> 席選択中
-            {count > 0 && <span className="text-gray-400"> / 推奨 {count}名</span>}
+          <span className="text-xs sm:text-sm text-gray-600">
+            <strong className="text-base sm:text-lg">{selectedIds.size}</strong> 席選択中
+            {count > 0 && <span className="text-gray-400 hidden sm:inline"> / 推奨 {count}名</span>}
           </span>
           <button
             onClick={handleConfirm}
             disabled={submitting || selectedIds.size === 0}
-            className="px-5 py-2 text-sm font-bold rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300 transition-colors"
+            className="px-4 sm:px-5 py-2 text-sm font-bold rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700 disabled:bg-gray-300 transition-colors"
           >
-            {submitting ? "処理中..." : "確定"}
+            {submitting ? "..." : "確定"}
           </button>
         </div>
 
@@ -160,10 +156,10 @@ export function ReceptionView() {
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-bold text-blue-700">おすすめ理由</span>
               <span className="text-xs text-blue-500">
-                (総合スコア: {recommendation.score.toFixed(1)})
+                ({recommendation.score.toFixed(1)}pt)
               </span>
             </div>
-            <div className="flex gap-2 text-[11px]">
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
               {([
                 ["見やすさ", recommendation.breakdown.row],
                 ["中央度", recommendation.breakdown.center],
@@ -173,7 +169,7 @@ export function ReceptionView() {
               ] as [string, number][]).map(([label, val]) => (
                 <div key={label} className="flex items-center gap-1">
                   <span className="text-gray-500">{label}</span>
-                  <div className="w-12 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="w-10 sm:w-12 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-blue-500 rounded-full"
                       style={{ width: `${val * 100}%` }}
@@ -186,15 +182,15 @@ export function ReceptionView() {
         )}
 
         <p className="text-xs text-gray-500 mb-2">
-          青枠=おすすめ席。タップで選択/解除できます。空席(緑)のみ選択可。
+          青=おすすめ席。タップで選択/解除。空席(緑)のみ選択可。
         </p>
 
         {/* 座席グリッド */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
           <div className="inline-block">
-            <div className="flex gap-0.5 ml-7 mb-0.5">
+            <div className="flex gap-0.5 ml-6 sm:ml-7 mb-0.5">
               {seats.filter((s) => s.row === rows[0]).sort((a, b) => a.col - b.col).map((s) => (
-                <div key={s.col} className="w-11 text-center text-xs text-gray-400">
+                <div key={s.col} className="w-9 sm:w-11 text-center text-[10px] sm:text-xs text-gray-400">
                   {s.col}
                 </div>
               ))}
@@ -203,7 +199,7 @@ export function ReceptionView() {
               const rowSeats = (seatsByRow.get(row) || []).sort((a, b) => a.col - b.col);
               return (
                 <div key={row} className="flex gap-0.5 items-center mb-0.5">
-                  <div className="w-6 text-center text-xs font-bold text-gray-500">{row}</div>
+                  <div className="w-5 sm:w-6 text-center text-[10px] sm:text-xs font-bold text-gray-500">{row}</div>
                   {rowSeats.map((seat) => {
                     const isSelected = selectedIds.has(seat.id);
                     const isEquip = seat.type === "equipment";
@@ -212,7 +208,7 @@ export function ReceptionView() {
                     let bg = "";
                     if (isEquip) bg = "bg-slate-800 text-slate-400";
                     else if (isSelected) bg = "bg-blue-400 text-white";
-                    else if (isAvailable) bg = "bg-green-300 hover:bg-green-400 text-gray-700";
+                    else if (isAvailable) bg = "bg-green-300 hover:bg-green-400 active:bg-green-500 text-gray-700";
                     else if (seat.status === "waiting") bg = "bg-yellow-400 text-gray-700";
                     else if (seat.status === "guiding") bg = "bg-orange-400 text-gray-700";
                     else bg = "bg-gray-400 text-gray-600";
@@ -222,7 +218,7 @@ export function ReceptionView() {
                         key={seat.id}
                         onClick={() => toggleSeat(seat)}
                         disabled={isEquip || !isAvailable}
-                        className={`w-11 h-9 rounded text-[10px] font-medium select-none transition-colors ${bg} ${
+                        className={`w-9 h-9 sm:w-11 sm:h-10 rounded text-[9px] sm:text-[10px] font-medium select-none transition-colors ${bg} ${
                           isAvailable && !isEquip ? "cursor-pointer" : "cursor-default"
                         } ${isSelected ? "ring-2 ring-blue-600" : ""}`}
                       >
@@ -241,20 +237,20 @@ export function ReceptionView() {
 
   // ==================== 人数選択フェーズ ====================
   return (
-    <div className="p-6 max-w-lg mx-auto">
+    <div className="p-4 sm:p-6 max-w-lg mx-auto">
       <div className="text-center mb-6">
         <p className="text-4xl font-bold text-gray-800">{availableCount}</p>
-        <p className="text-gray-500">残り空席数</p>
+        <p className="text-gray-500 text-sm">残り空席数</p>
       </div>
 
       {/* クイック選択ボタン */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
         {[1, 2, 3, 4].map((n) => (
           <button
             key={n}
             onClick={() => handleSelectCount(n)}
             disabled={availableCount < n}
-            className="h-20 text-3xl font-bold rounded-xl bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="h-20 sm:h-24 text-2xl sm:text-3xl font-bold rounded-xl bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
             {n}名
           </button>
@@ -268,20 +264,20 @@ export function ReceptionView() {
           min={1}
           value={customCount}
           onChange={(e) => setCustomCount(e.target.value)}
-          placeholder="5名以上はこちら"
-          className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-lg"
+          placeholder="5名以上"
+          className="flex-1 rounded-lg border border-gray-300 px-3 sm:px-4 py-3 text-base sm:text-lg"
         />
         <button
           onClick={handleCustomSubmit}
           disabled={!customCount || parseInt(customCount, 10) < 1}
-          className="px-6 py-3 rounded-lg bg-blue-500 text-white font-bold hover:bg-blue-600 disabled:bg-gray-300 transition-colors"
+          className="px-5 sm:px-6 py-3 rounded-lg bg-blue-500 text-white font-bold hover:bg-blue-600 active:bg-blue-700 disabled:bg-gray-300 transition-colors"
         >
           選択
         </button>
       </div>
 
       {message && (
-        <div className="mt-2 p-3 rounded-lg bg-gray-100 text-center text-lg font-medium">
+        <div className="mt-2 p-3 rounded-lg bg-gray-100 text-center text-base font-medium">
           {message}
         </div>
       )}
@@ -296,15 +292,15 @@ export function ReceptionView() {
             {waitingGroups.map(([groupId, groupSeats]) => (
               <div
                 key={groupId}
-                className="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2"
+                className="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg px-3 sm:px-4 py-2"
               >
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-gray-700 mr-2 min-w-0 truncate">
                   <strong>{groupSeats.length}名</strong>{" "}
                   {groupSeats.map((s) => s.id).join(", ")}
                 </span>
                 <button
                   onClick={() => handleCancel(groupId)}
-                  className="px-3 py-1 text-sm font-medium rounded bg-red-500 text-white hover:bg-red-600 transition-colors"
+                  className="px-3 py-1.5 text-sm font-medium rounded bg-red-500 text-white hover:bg-red-600 active:bg-red-700 transition-colors shrink-0"
                 >
                   取消
                 </button>

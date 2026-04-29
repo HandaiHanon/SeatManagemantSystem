@@ -74,9 +74,9 @@ export function LogView() {
   }
 
   return (
-    <div className="p-4 max-w-3xl mx-auto">
+    <div className="p-3 sm:p-4 max-w-3xl mx-auto">
       {/* 統計サマリー */}
-      <div className="grid grid-cols-5 gap-2 mb-6">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-6">
         {([
           ["累計入場", stats.totalEntries, "text-blue-600"],
           ["着席中", stats.totalSeated, "text-gray-600"],
@@ -85,8 +85,8 @@ export function LogView() {
           ["空席", stats.totalAvailable, "text-green-600"],
         ] as [string, number, string][]).map(([label, val, color]) => (
           <div key={label} className="text-center p-2 bg-white rounded-lg border border-gray-200">
-            <p className={`text-2xl font-bold ${color}`}>{val}</p>
-            <p className="text-xs text-gray-500">{label}</p>
+            <p className={`text-xl sm:text-2xl font-bold ${color}`}>{val}</p>
+            <p className="text-[10px] sm:text-xs text-gray-500">{label}</p>
           </div>
         ))}
       </div>
@@ -133,13 +133,13 @@ export function LogView() {
         <p className="text-center text-gray-400 py-8">操作ログがありません</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full text-xs sm:text-sm border-collapse">
             <thead>
-              <tr className="border-b border-gray-200 text-left text-xs text-gray-500">
-                <th className="py-2 px-2">時刻</th>
-                <th className="py-2 px-2">座席</th>
-                <th className="py-2 px-2">変更前</th>
-                <th className="py-2 px-2">変更後</th>
+              <tr className="border-b border-gray-200 text-left text-[10px] sm:text-xs text-gray-500">
+                <th className="py-2 px-1 sm:px-2">時刻</th>
+                <th className="py-2 px-1 sm:px-2">座席</th>
+                <th className="py-2 px-1 sm:px-2">前</th>
+                <th className="py-2 px-1 sm:px-2">後</th>
               </tr>
             </thead>
             <tbody>
@@ -151,12 +151,12 @@ export function LogView() {
 
                 return (
                   <tr key={log.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-1.5 px-2 font-mono text-xs text-gray-500">{timeStr}</td>
-                    <td className="py-1.5 px-2 font-medium">{log.seatId}</td>
-                    <td className="py-1.5 px-2 text-gray-500">
+                    <td className="py-1.5 px-1 sm:px-2 font-mono text-[10px] sm:text-xs text-gray-500">{timeStr}</td>
+                    <td className="py-1.5 px-1 sm:px-2 font-medium">{log.seatId}</td>
+                    <td className="py-1.5 px-1 sm:px-2 text-gray-500">
                       {STATUS_LABEL[log.previousStatus] || log.previousStatus}
                     </td>
-                    <td className="py-1.5 px-2 font-medium">
+                    <td className="py-1.5 px-1 sm:px-2 font-medium">
                       {STATUS_LABEL[log.newStatus] || log.newStatus}
                     </td>
                   </tr>
