@@ -19,19 +19,22 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー + タブ */}
-      <header className="bg-white border-b border-gray-200">
-        <h1 className="text-center text-lg font-bold py-2 text-gray-800">
-          座席管理システム
-        </h1>
-        <div className="flex">
+      <header className="bg-[#1a7de8] border-b border-blue-700">
+        <div className="flex items-center justify-center gap-2 py-2">
+          <img src="/hanon-logo.jpg" alt="Hanon" className="h-8 w-8 rounded-full object-cover" />
+          <h1 className="text-lg font-bold text-white">
+            Hanon 座席管理システム
+          </h1>
+        </div>
+        <div className="flex bg-[#1565c0]">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex-1 py-3 text-center font-medium transition-colors ${
+              className={`flex-1 py-2.5 text-center text-sm font-medium transition-colors ${
                 tab === t.key
-                  ? "border-b-2 border-blue-500 text-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "border-b-2 border-white text-white"
+                  : "text-blue-200 hover:text-white"
               }`}
             >
               {t.label}
