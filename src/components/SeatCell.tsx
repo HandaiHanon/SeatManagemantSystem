@@ -24,17 +24,15 @@ interface Props {
   onTap: (seat: Seat) => void;
   dark?: boolean;
   compact?: boolean;
-  highlighted?: boolean;
-  paintMode?: boolean;
+  availableClickable?: boolean;
 }
 
-export function SeatCell({ seat, onTap, dark = false, compact = false, highlighted = false, paintMode = false }: Props) {
+export function SeatCell({ seat, onTap, dark = false, compact = false, availableClickable = false }: Props) {
   const size = compact ? "w-8 h-8 text-[9px]" : "w-11 h-11 sm:w-12 sm:h-11 text-[10px] sm:text-xs";
 
   if (seat.type === "equipment") {
     return (
       <div
-        data-seat-id={paintMode ? seat.id : undefined}
         className={`${size} rounded flex items-center justify-center select-none ${
           dark ? "bg-slate-900 text-slate-600" : "bg-slate-800 text-slate-400"
         }`}
@@ -46,20 +44,17 @@ export function SeatCell({ seat, onTap, dark = false, compact = false, highlight
 
   const colors = STATUS_COLORS[seat.status] || { light: "bg-gray-300", dark: "bg-gray-700" };
   const colorClass = dark ? colors.dark : colors.light;
-  const isClickable = paintMode
-    ? seat.status === "available"
-    : seat.status === "waiting" || seat.status === "guiding" || seat.status === "seated";
+  const isClickable =
+    seat.status === "waiting" || seat.status === "guiding" || seat.status === "seated" ||
+    (availableClickable && seat.status === "available");
 
   return (
     <button
       onClick={() => onTap(seat)}
       disabled={!isClickable}
-      data-seat-id={paintMode ? seat.id : undefined}
       className={`${size} rounded flex items-center justify-center font-medium select-none transition-colors ${colorClass} ${
         dark ? "text-neutral-300" : ""
-      } ${isClickable ? "cursor-pointer" : "cursor-default"} ${
-        highlighted ? "ring-2 ring-green-600/50" : ""
-      }`}
+      } ${isClickable ? "cursor-pointer" : "cursor-default"}`}
     >
       {seat.id}
     </button>

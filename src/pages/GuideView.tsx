@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useMemo, useRef } from "react";
 import { useSeats } from "../hooks/useSeats";
 import { transitionSeat, consumeQueueItem, markSeatsAsSeated } from "../lib/seatService";
 import { SeatGrid } from "../components/SeatGrid";
@@ -12,11 +12,10 @@ interface Props {
 
 export function GuideView({ peakMode, queue, appState }: Props) {
   const { seats, loading } = useSeats();
-  const [paintMode, setPaintMode] = useState(false);
 
   const handleSeatTap = async (seat: Seat) => {
-    if (paintMode && seat.status === "available") {
-      // なぞり入力モード: 単一タップでも seated にマーク
+    // ピークモード: 空席タップで直接 seated にマーク
+    if (peakMode && seat.status === "available") {
       try {
         await markSeatsAsSeated(seats, [seat.id]);
       } catch (err) {
@@ -32,14 +31,6 @@ export function GuideView({ peakMode, queue, appState }: Props) {
       console.error("状態遷移エラー:", err);
     }
   };
-
-  const handlePaintComplete = useCallback(async (seatIds: string[]) => {
-    try {
-      await markSeatsAsSeated(seats, seatIds);
-    } catch (err) {
-      console.error("一括マークエラー:", err);
-    }
-  }, [seats]);
 
   // キュー消化（スワイプ対応）
   const touchStartX = useRef<number | null>(null);
@@ -165,31 +156,17 @@ export function GuideView({ peakMode, queue, appState }: Props) {
         </div>
       )}
 
-      {/* ステータスバー（通常 & ピーク共通） */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm">
-          <span>
-            待機: <strong className="text-yellow-500/80">{waitingCount}</strong>
-          </span>
-          <span>
-            案内: <strong className="text-orange-500/80">{guidingCount}</strong>
-          </span>
-          <span>
-            着席: <strong className="text-gray-500">{seatedCount}</strong>
-          </span>
-        </div>
-        {peakMode && (
-          <button
-            onClick={() => setPaintMode((v) => !v)}
-            className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors shrink-0 ${
-              paintMode
-                ? "bg-green-800 text-green-300 border border-green-600"
-                : "bg-slate-800 text-neutral-300 border border-slate-600"
-            }`}
-          >
-            {paintMode ? "なぞり入力 ON" : "なぞり入力"}
-          </button>
-        )}
+      {/* ステータスバー */}
+      <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm mb-3">
+        <span>
+          待機: <strong className="text-yellow-500/80">{waitingCount}</strong>
+        </span>
+        <span>
+          案内: <strong className="text-orange-500/80">{guidingCount}</strong>
+        </span>
+        <span>
+          着席: <strong className="text-gray-500">{seatedCount}</strong>
+        </span>
       </div>
 
       {/* ピークモード: キューリスト */}
@@ -261,14 +238,13 @@ export function GuideView({ peakMode, queue, appState }: Props) {
           seats={seats}
           onSeatTap={handleSeatTap}
           dark={true}
-          paintMode={paintMode}
-          onPaintComplete={handlePaintComplete}
+          availableClickable={peakMode}
         />
       </div>
 
       <p className="text-center text-xs mt-4 text-gray-600">
-        {paintMode
-          ? "空席をタップまたはなぞって着席済にマーク"
+        {peakMode
+          ? "空席タップで着席済にマーク"
           : "黄(待機) → 橙(案内中) → 灰(着席) → タップで空席に戻す"}
       </p>
     </div>

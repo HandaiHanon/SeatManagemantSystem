@@ -1,4 +1,3 @@
-import { useRef, useCallback, useState } from "react";
 import type { Seat } from "../lib/types";
 import { SeatCell } from "./SeatCell";
 
@@ -7,8 +6,7 @@ interface Props {
   onSeatTap: (seat: Seat) => void;
   dark?: boolean;
   compact?: boolean;
-  paintMode?: boolean;
-  onPaintComplete?: (seatIds: string[]) => void;
+  availableClickable?: boolean;
 }
 
 export function SeatGrid({
@@ -16,8 +14,7 @@ export function SeatGrid({
   onSeatTap,
   dark = false,
   compact = false,
-  paintMode = false,
-  onPaintComplete,
+  availableClickable = false,
 }: Props) {
   const rows = [...new Set(seats.map((s) => s.row))].sort();
   const seatsByRow = new Map<string, Seat[]>();
@@ -34,70 +31,8 @@ export function SeatGrid({
   const colSize = compact ? "w-8" : "w-11 sm:w-12";
   const gap = compact ? "gap-0.5" : "gap-1";
 
-  // なぞり入力用の状態管理
-  const [paintingIds, setPaintingIds] = useState<Set<string>>(new Set());
-  const isPaintingRef = useRef(false);
-  const paintSetRef = useRef<Set<string>>(new Set());
-
-  const seatMapRef = useRef(new Map<string, Seat>());
-  seatMapRef.current = new Map(seats.map((s) => [s.id, s]));
-
-  const getSeatIdFromPoint = useCallback((x: number, y: number): string | null => {
-    const el = document.elementFromPoint(x, y);
-    if (!el) return null;
-    const seatEl = (el as HTMLElement).closest("[data-seat-id]");
-    return seatEl?.getAttribute("data-seat-id") ?? null;
-  }, []);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (!paintMode) return;
-    isPaintingRef.current = true;
-    paintSetRef.current = new Set();
-
-    const touch = e.touches[0];
-    const id = getSeatIdFromPoint(touch.clientX, touch.clientY);
-    if (id) {
-      const seat = seatMapRef.current.get(id);
-      if (seat && seat.status === "available" && seat.type === "normal") {
-        paintSetRef.current.add(id);
-        setPaintingIds(new Set(paintSetRef.current));
-      }
-    }
-  }, [paintMode, getSeatIdFromPoint]);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isPaintingRef.current || !paintMode) return;
-    const touch = e.touches[0];
-    const id = getSeatIdFromPoint(touch.clientX, touch.clientY);
-    if (id && !paintSetRef.current.has(id)) {
-      const seat = seatMapRef.current.get(id);
-      if (seat && seat.status === "available" && seat.type === "normal") {
-        paintSetRef.current.add(id);
-        setPaintingIds(new Set(paintSetRef.current));
-      }
-    }
-  }, [paintMode, getSeatIdFromPoint]);
-
-  const handleTouchEnd = useCallback(() => {
-    if (!isPaintingRef.current) return;
-    isPaintingRef.current = false;
-
-    if (paintSetRef.current.size > 0 && onPaintComplete) {
-      onPaintComplete([...paintSetRef.current]);
-    }
-
-    paintSetRef.current = new Set();
-    setPaintingIds(new Set());
-  }, [onPaintComplete]);
-
   return (
-    <div
-      className="space-y-0.5 sm:space-y-1"
-      style={paintMode ? { touchAction: "none" } : undefined}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div className="space-y-0.5 sm:space-y-1">
       {/* 列番号ヘッダー */}
       <div className={`flex ${gap} ml-6 sm:ml-8`}>
         {Array.from({ length: maxCol }, (_, i) => (
@@ -127,8 +62,7 @@ export function SeatGrid({
                 onTap={onSeatTap}
                 dark={dark}
                 compact={compact}
-                paintMode={paintMode}
-                highlighted={paintingIds.has(seat.id)}
+                availableClickable={availableClickable}
               />
             ))}
           </div>
