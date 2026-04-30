@@ -22,3 +22,20 @@ export interface OperationLog {
   timestamp: Timestamp;
   groupId?: string;
 }
+
+export type QueueStatus = "pending" | "consumed";
+
+export interface QueueItem {
+  id: string;
+  count: number;
+  timestamp: Timestamp;
+  status: QueueStatus;
+  consumedAt?: Timestamp;
+}
+
+export interface AppState {
+  peakMode: boolean;
+  peakConsumedCount: number;
+  peakMarkedCount: number;
+  updatedAt: Timestamp;
+}

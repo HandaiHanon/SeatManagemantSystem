@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSeats } from "../hooks/useSeats";
-import { saveLayout, resetAllSeats, type SeatConfig } from "../lib/seatService";
+import { saveLayout, resetAllSeats, clearQueue, type SeatConfig } from "../lib/seatService";
 import type { Block, SeatType } from "../lib/types";
 
 const ROW_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
@@ -266,6 +266,27 @@ export function SetupView() {
           className="w-full py-3 rounded-lg bg-red-500 text-white font-bold hover:bg-red-600 disabled:bg-gray-300 transition-colors"
         >
           着席状況をリセット
+        </button>
+
+        <button
+          onClick={async () => {
+            if (!confirm("待機キューを全件削除しますか？")) return;
+            setSaving(true);
+            setMessage(null);
+            try {
+              const count = await clearQueue();
+              setMessage(count > 0 ? `${count}件のキューを削除しました` : "削除対象のキューがありません");
+            } catch (err) {
+              console.error(err);
+              setMessage("キュー削除に失敗しました");
+            } finally {
+              setSaving(false);
+            }
+          }}
+          disabled={saving}
+          className="w-full py-3 rounded-lg bg-orange-500 text-white font-bold hover:bg-orange-600 disabled:bg-gray-300 transition-colors"
+        >
+          待機キューを全削除
         </button>
       </div>
 

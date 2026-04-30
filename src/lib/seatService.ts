@@ -4,6 +4,10 @@ import {
   getDocs,
   writeBatch,
   serverTimestamp,
+  setDoc,
+  addDoc,
+  updateDoc,
+  increment,
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "./firebase";
@@ -226,4 +230,117 @@ export async function saveLayout(seatConfigs: SeatConfig[]): Promise<void> {
     }
     await batch.commit();
   }
+}
+
+// ─── ピークモード関連 ───
+
+const appStateRef = () => doc(db, "app_state", "current");
+
+/**
+ * ピークモードを切り替える
+ * ON時はセッションカウンターをリセット
+ */
+export async function togglePeakMode(currentValue: boolean): Promise<void> {
+  const newValue = !currentValue;
+  const data: Record<string, unknown> = {
+    peakMode: newValue,
+    updatedAt: serverTimestamp(),
+  };
+  if (newValue) {
+    data.peakConsumedCount = 0;
+    data.peakMarkedCount = 0;
+  }
+  await setDoc(appStateRef(), data, { merge: true });
+}
+
+/**
+ * キューに人数を追加（fire-and-forget用）
+ */
+export async function addToQueue(count: number): Promise<void> {
+  await addDoc(collection(db, "queue"), {
+    count,
+    timestamp: serverTimestamp(),
+    status: "pending",
+  });
+}
+
+/**
+ * キューアイテムを消化済みにし、消化カウンターを加算
+ */
+export async function consumeQueueItem(
+  itemId: string,
+  count: number
+): Promise<void> {
+  const batch = writeBatch(db);
+
+  batch.update(doc(db, "queue", itemId), {
+    status: "consumed",
+    consumedAt: serverTimestamp(),
+  });
+
+  batch.update(appStateRef(), {
+    peakConsumedCount: increment(count),
+  });
+
+  await batch.commit();
+}
+
+/**
+ * 座席を直接 available → seated にマークし、マークカウンターを加算
+ */
+export async function markSeatsAsSeated(
+  seats: Seat[],
+  seatIds: string[]
+): Promise<void> {
+  const toMark = seatIds
+    .map((id) => seats.find((s) => s.id === id))
+    .filter((s): s is Seat => !!s && s.status === "available");
+
+  if (toMark.length === 0) return;
+
+  for (let i = 0; i < toMark.length; i += 250) {
+    const chunk = toMark.slice(i, i + 250);
+    const batch = writeBatch(db);
+
+    for (const seat of chunk) {
+      batch.update(doc(db, "seats", seat.id), {
+        status: "seated" as SeatStatus,
+        groupId: null,
+        updatedAt: serverTimestamp(),
+      });
+
+      const logRef = doc(collection(db, "operation_logs"));
+      batch.set(logRef, {
+        seatId: seat.id,
+        previousStatus: seat.status,
+        newStatus: "seated",
+        groupId: null,
+        timestamp: serverTimestamp(),
+      });
+    }
+
+    await batch.commit();
+  }
+
+  await updateDoc(appStateRef(), {
+    peakMarkedCount: increment(toMark.length),
+  });
+}
+
+/**
+ * キューを全件削除する
+ */
+export async function clearQueue(): Promise<number> {
+  const snapshot = await getDocs(collection(db, "queue"));
+  if (snapshot.empty) return 0;
+
+  const total = snapshot.size;
+  for (let i = 0; i < snapshot.docs.length; i += 400) {
+    const chunk = snapshot.docs.slice(i, i + 400);
+    const batch = writeBatch(db);
+    chunk.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
+
+  return total;
 }

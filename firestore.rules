@@ -21,5 +21,22 @@ service cloud.firestore {
                     && request.resource.data.newStatus in ['available', 'waiting', 'guiding', 'seated'];
       allow update: if false;
     }
+
+    // app_state コレクション（ピークモード状態管理）
+    match /app_state/{docId} {
+      allow read: if true;
+      allow write: if docId == "current";
+    }
+
+    // queue コレクション（ピークモード待機キュー）
+    match /queue/{queueId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['count', 'timestamp', 'status'])
+                    && request.resource.data.count is int
+                    && request.resource.data.count > 0
+                    && request.resource.data.status in ['pending', 'consumed'];
+      allow update: if request.resource.data.status in ['pending', 'consumed'];
+      allow delete: if true;
+    }
   }
 }

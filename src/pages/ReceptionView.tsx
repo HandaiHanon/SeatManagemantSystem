@@ -1,15 +1,21 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSeats } from "../hooks/useSeats";
 import {
   assignSeatsByIds,
   cancelGroup,
+  addToQueue,
 } from "../lib/seatService";
 import { recommendSeats, type ScoredCandidate } from "../lib/recommend";
-import type { Seat } from "../lib/types";
+import type { Seat, QueueItem } from "../lib/types";
 
 type Phase = "select-count" | "confirm-seats";
 
-export function ReceptionView() {
+interface Props {
+  peakMode: boolean;
+  queue: QueueItem[];
+}
+
+export function ReceptionView({ peakMode, queue }: Props) {
   const { seats, loading } = useSeats();
   const [phase, setPhase] = useState<Phase>("select-count");
   const [count, setCount] = useState(1);
@@ -18,6 +24,8 @@ export function ReceptionView() {
   const [recommendation, setRecommendation] = useState<ScoredCandidate | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [flash, setFlash] = useState<string | null>(null);
+  const [peakCustom, setPeakCustom] = useState("");
 
   const availableCount = seats.filter(
     (s) => s.type === "normal" && s.status === "available"
@@ -40,6 +48,34 @@ export function ReceptionView() {
     });
   }, [seats]);
 
+  // ピークモード時のキュー待機人数
+  const pendingQueueCount = useMemo(() => {
+    return queue
+      .filter((q) => q.status === "pending")
+      .reduce((sum, q) => sum + q.count, 0);
+  }, [queue]);
+
+  // フラッシュ通知の自動消去
+  useEffect(() => {
+    if (!flash) return;
+    const timer = setTimeout(() => setFlash(null), 1000);
+    return () => clearTimeout(timer);
+  }, [flash]);
+
+  // ピークモード: fire-and-forget キュー追加
+  const handlePeakAdd = useCallback((n: number) => {
+    setFlash(`+${n}名`);
+    addToQueue(n).catch((err) => console.error("キュー追加エラー:", err));
+  }, []);
+
+  const handlePeakCustomSubmit = () => {
+    const n = parseInt(peakCustom, 10);
+    if (!n || n < 1) return;
+    handlePeakAdd(n);
+    setPeakCustom("");
+  };
+
+  // 通常モード: 座席推薦
   const handleSelectCount = (n: number) => {
     setCount(n);
     setMessage(null);
@@ -111,7 +147,59 @@ export function ReceptionView() {
     return <div className="p-8 text-center text-gray-500">読み込み中...</div>;
   }
 
-  // ==================== 座席確認フェーズ ====================
+  // ==================== ピークモード ====================
+  if (peakMode) {
+    return (
+      <div className="p-4 sm:p-6 max-w-lg mx-auto bg-gray-50 min-h-[80vh]">
+        {/* 待機人数 */}
+        <div className="text-center mb-6">
+          <p className="text-5xl font-bold text-gray-800">{pendingQueueCount}</p>
+          <p className="text-gray-500 text-sm">待ち人数</p>
+        </div>
+
+        {/* フラッシュ通知 */}
+        {flash && (
+          <div className="mb-4 py-2 rounded-lg bg-red-100 border border-red-300 text-center text-lg font-bold text-red-600 animate-pulse">
+            {flash}
+          </div>
+        )}
+
+        {/* 巨大人数ボタン */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
+          {[1, 2, 3, 4].map((n) => (
+            <button
+              key={n}
+              onClick={() => handlePeakAdd(n)}
+              className="h-28 sm:h-36 text-4xl sm:text-5xl font-bold rounded-xl bg-red-600 text-white hover:bg-red-700 active:bg-red-800 transition-colors select-none"
+            >
+              {n}名
+            </button>
+          ))}
+        </div>
+
+        {/* 5名以上 */}
+        <div className="flex gap-2">
+          <input
+            type="number"
+            min={1}
+            value={peakCustom}
+            onChange={(e) => setPeakCustom(e.target.value)}
+            placeholder="5名以上"
+            className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-lg"
+          />
+          <button
+            onClick={handlePeakCustomSubmit}
+            disabled={!peakCustom || parseInt(peakCustom, 10) < 1}
+            className="px-6 py-3 rounded-lg bg-orange-500 text-white font-bold text-lg hover:bg-orange-600 active:bg-orange-700 disabled:bg-gray-300 transition-colors"
+          >
+            追加
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ==================== 通常モード: 座席確認フェーズ ====================
   if (phase === "confirm-seats") {
     const rows = [...new Set(seats.map((s) => s.row))].sort();
     const seatsByRow = new Map<string, Seat[]>();
@@ -138,7 +226,7 @@ export function ReceptionView() {
           <button
             onClick={handleConfirm}
             disabled={submitting || selectedIds.size === 0}
-            className="px-4 sm:px-5 py-2 text-sm font-bold rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700 disabled:bg-gray-300 transition-colors"
+            className="px-4 sm:px-5 py-2 text-sm font-bold rounded-lg bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-300 transition-colors"
           >
             {submitting ? "..." : "確定"}
           </button>
@@ -235,7 +323,7 @@ export function ReceptionView() {
     );
   }
 
-  // ==================== 人数選択フェーズ ====================
+  // ==================== 通常モード: 人数選択フェーズ ====================
   return (
     <div className="p-4 sm:p-6 max-w-lg mx-auto">
       <div className="text-center mb-6">
@@ -250,7 +338,7 @@ export function ReceptionView() {
             key={n}
             onClick={() => handleSelectCount(n)}
             disabled={availableCount < n}
-            className="h-20 sm:h-24 text-2xl sm:text-3xl font-bold rounded-xl bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="h-20 sm:h-24 text-2xl sm:text-3xl font-bold rounded-xl bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
             {n}名
           </button>
@@ -270,7 +358,7 @@ export function ReceptionView() {
         <button
           onClick={handleCustomSubmit}
           disabled={!customCount || parseInt(customCount, 10) < 1}
-          className="px-5 sm:px-6 py-3 rounded-lg bg-blue-500 text-white font-bold hover:bg-blue-600 active:bg-blue-700 disabled:bg-gray-300 transition-colors"
+          className="px-5 sm:px-6 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-300 transition-colors"
         >
           選択
         </button>
